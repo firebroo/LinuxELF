@@ -149,7 +149,8 @@ check_magic_hdr(unsigned char *ident)
             && ident[EI_MAG3] == ELFMAG3)? true: false;
 }
 
-void check_os_version(unsigned char *ident)
+void
+check_os_version(unsigned char *ident)
 {
     /*5th byte*/
     printf("%-36s", "OS VERSION: ");
@@ -166,7 +167,8 @@ void check_os_version(unsigned char *ident)
     }
 }
 
-void check_big_or_small_edian(unsigned char *ident)
+void
+check_big_or_small_edian(unsigned char *ident)
 {
     /*6th byte*/
     printf("%-36s", "CPU Endian: ");
@@ -183,7 +185,8 @@ void check_big_or_small_edian(unsigned char *ident)
     }
 }
 
-int check_osabi(unsigned char *ident)
+int
+check_osabi(unsigned char *ident)
 {
     printf("%-36s", "OS/ABI: ");
     switch(ident[EI_OSABI]) {
@@ -251,10 +254,8 @@ int check_osabi(unsigned char *ident)
     return 0;
 }
 
-
-
-
-void check_elf_class(Elf64_Half type)
+void
+check_elf_class(Elf64_Half type)
 {
     printf("%-36s", "File Type: ");
     switch(type) {
@@ -273,7 +274,8 @@ void check_elf_class(Elf64_Half type)
     }
 }
 
-void check_cpu_type (Elf64_Half type)
+void
+check_cpu_type (Elf64_Half type)
 {
     printf("%-36s", "Machine: ");
     switch(type) {
