@@ -353,11 +353,22 @@ void greate_print_hdr_magic(Elf64_Ehdr elf64_endr) {
     printf("\n");
 }
 
+int lseek_check_os_version(int fd) {
+    /*17th is os version flag*/
+    unsigned char    ch;
+
+    lseek(fd,  16, SEEK_SET);
+    read(fd, &ch, 1);
+    lseek(fd, 0, SEEK_SET);
+    return ch;
+}
+
 int
 main(int argc, char *argv[])
 {
-    int         fd, ret;
+    int         fd, ret, os_version;
     Elf64_Ehdr  elf64_endr;
+    Elf32_Ehdr  elf32_endr;
 
     if (argc != 2) {
         printf("Usage: ./parse file\n");
@@ -368,21 +379,33 @@ main(int argc, char *argv[])
         perror("open");
         exit(-1);
     }
-    if ( (ret = read(fd, &elf64_endr, sizeof(Elf64_Ehdr))) < 0) {
-        perror("read");
-        exit(-1);
+    os_version = lseek_check_os_version(fd);
+    switch (os_version) {
+        case 1:
+            if ( (ret = read(fd, &elf32_endr, sizeof(Elf32_Ehdr))) < 0) {
+                perror("read");
+                exit(-1);
+            }
+            break;
+        case 2:
+           if ( (ret = read(fd, &elf64_endr, sizeof(Elf64_Ehdr))) < 0) {
+                perror("read");
+                exit(-1);
+            }
+            assert(check_magic_hdr(elf64_endr.e_ident));
+            greate_print_hdr_magic(elf64_endr);
+            assert(check_os_version(elf64_endr.e_ident));
+            assert(check_big_or_small_edian(elf64_endr.e_ident));
+            printf("\t%-36s%d(current)\n", "Data:", elf64_endr.e_ident[EI_VERSION]);
+            assert(check_osabi(elf64_endr.e_ident));
+            printf("\t%-36s%d\n", "ABI Version:", elf64_endr.e_ident[EI_ABIVERSION]);
+            assert(check_elf_class(elf64_endr.e_type));
+            assert(check_cpu_type(elf64_endr.e_machine));
+            greate_print_hdr_info(elf64_endr);
+            break;
+        default:
+            fprintf(stderr, "unknow os version\n");
+            exit(-1);
     }
-    assert(check_magic_hdr(elf64_endr.e_ident));
-
-    greate_print_hdr_magic(elf64_endr);
-
-    assert(check_os_version(elf64_endr.e_ident));
-    assert(check_big_or_small_edian(elf64_endr.e_ident));
-    printf("\t%-36s%d(current)\n", "Data:", elf64_endr.e_ident[EI_VERSION]);
-    assert(check_osabi(elf64_endr.e_ident));
-    printf("\t%-36s%d\n", "ABI Version:", elf64_endr.e_ident[EI_ABIVERSION]);
-    assert(check_elf_class(elf64_endr.e_type));
-    assert(check_cpu_type(elf64_endr.e_machine));
-    greate_print_hdr_info(elf64_endr);
-    return 0;
+   return 0;
 }
