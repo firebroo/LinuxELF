@@ -149,11 +149,11 @@ check_magic_hdr(unsigned char *ident)
             && ident[EI_MAG3] == ELFMAG3)? true: false;
 }
 
-void
+bool
 check_os_version(unsigned char *ident)
 {
     /*5th byte*/
-    printf("%-36s", "OS VERSION: ");
+    printf("\t%-36s", "OS VERSION:");
     switch(ident[EI_CLASS]) {
         case ELFCLASS32:
             printf("32 os\n");
@@ -163,15 +163,16 @@ check_os_version(unsigned char *ident)
             break;
         default:
             printf("unknow os\n");
-            break;
+            return false;
     }
+    return true;
 }
 
-void
+bool
 check_big_or_small_edian(unsigned char *ident)
 {
     /*6th byte*/
-    printf("%-36s", "CPU Endian: ");
+    printf("\t%-36s", "CPU Endian:");
     switch(ident[EI_DATA]) {
         case ELFDATA2LSB:
             printf("little endian\n");
@@ -181,14 +182,15 @@ check_big_or_small_edian(unsigned char *ident)
             break;
         default:
             printf("unknow endian\n");
-            break;
+            return false;
     }
+    return true;
 }
 
-int
+bool
 check_osabi(unsigned char *ident)
 {
-    printf("%-36s", "OS/ABI: ");
+    printf("\t%-36s", "OS/ABI:");
     switch(ident[EI_OSABI]) {
             case ELFOSABI_SYSV:
                 printf("UNIX System V ABI");
@@ -248,36 +250,37 @@ check_osabi(unsigned char *ident)
 
             default:
                 printf("unknow osabi\n");
-                return -1;
+                return false;
         }
     printf("(%d)\n", ident[EI_OSABI]);
-    return 0;
+    return true;
 }
 
-void
+bool
 check_elf_class(Elf64_Half type)
 {
-    printf("%-36s", "File Type: ");
+    printf("\t%-36s", "File Type:");
     switch(type) {
         case 1:
             printf("Relocatable file\n");
             break;
         case 2:
-            printf("execution file\n");
+            printf("EXEC (Executable file))\n");
             break;
         case 3:
             printf("dynamic link file\n");
             break;
         default:
             printf("unkonw file type\n");
-            break;
+            return false;
     }
+    return true;
 }
 
-void
+bool
 check_cpu_type (Elf64_Half type)
 {
-    printf("%-36s", "Machine: ");
+    printf("\t%-36s", "Machine:");
     switch(type) {
         case 3:
             printf("intel i386\n");
@@ -287,14 +290,62 @@ check_cpu_type (Elf64_Half type)
             break;
         default:
             printf("unknow cpu type\n");
-            break;
+            return false;
     }
+    return true;
+}
+
+void greate_print_hdr_info(Elf64_Ehdr elf64_endr) {
+    printf("\t%-36s", "ELF Version:");
+    printf("%#x\n", elf64_endr.e_version);
+
+    printf("\t%-36s", "Entry point address:");
+    printf("%#lx\n", elf64_endr.e_entry);
+
+    printf("\t%-36s", "Start of program headers:");
+    printf("%ld (bytes into file))\n", elf64_endr.e_phoff);
+
+    printf("\t%-36s", "Start of section headers:");
+    printf("%ld (bytes into file))\n", elf64_endr.e_shoff);
+
+    printf("\t%-36s", "Flags: ");
+    printf("%#x\n", (int)elf64_endr.e_flags);
+
+    printf("\t%-36s", "Size of this header:");
+    printf("%d (bytes)\n", elf64_endr.e_ehsize);
+
+    printf("\t%-36s", "Size of program headers:");
+    printf("%d (bytes)\n", elf64_endr.e_phentsize);
+
+    printf("\t%-36s", "Number of program headers:");
+    printf("%d\n", elf64_endr.e_phnum);
+
+    printf("\t%-36s", "Size of section headers:");
+    printf("%d (bytes)\n", elf64_endr.e_shentsize);
+
+    printf("\t%-36s", "Number of section headers:");
+    printf("%d\n", elf64_endr.e_shnum);
+
+    printf("\t%-36s", "Section header string table index:");
+    printf("%d\n", elf64_endr.e_shstrndx);
+ 
+}
+
+void greate_print_hdr_magic(Elf64_Ehdr elf64_endr) {
+    int     i;
+
+    printf("ELF Header:\n");
+    printf("\t%-36s", "maigc header bytes: ");
+    for (i = 0; i < EI_NIDENT; i++) {
+        printf("%02x ", elf64_endr.e_ident[i]);
+    }
+    printf("\n");
 }
 
 int
 main(int argc, char *argv[])
 {
-    int         i, fd, ret;
+    int         fd, ret;
     Elf64_Ehdr  elf64_endr;
 
     if (argc != 2) {
@@ -310,20 +361,16 @@ main(int argc, char *argv[])
         perror("read");
         exit(-1);
     }
-    assert(check_magic_hdr(elf64_endr.e_ident) == true);
-    printf("%-36s", "maigc header bytes: ");
-    for (i = 0; i < EI_NIDENT; i++) {
-        printf("%02x ", elf64_endr.e_ident[i]);
-    }
-    printf("\n");
-    check_os_version(elf64_endr.e_ident);
-    check_big_or_small_edian(elf64_endr.e_ident);
-    printf("%-36s%d(current)\n", "VERSION: ", elf64_endr.e_ident[EI_VERSION]);
-    check_osabi(elf64_endr.e_ident);
+    assert(check_magic_hdr(elf64_endr.e_ident));
 
-    check_elf_class(elf64_endr.e_type);
-    check_cpu_type(elf64_endr.e_machine);
-    printf("%-36s", "ELF Version: ");
-    printf("%#04x\n", elf64_endr.e_version);
+    greate_print_hdr_magic(elf64_endr);
+
+    assert(check_os_version(elf64_endr.e_ident));
+    assert(check_big_or_small_edian(elf64_endr.e_ident));
+    printf("\t%-36s%d(current)\n", "Data:", elf64_endr.e_ident[EI_VERSION]);
+    assert(check_osabi(elf64_endr.e_ident));
+    assert(check_elf_class(elf64_endr.e_type));
+    assert(check_cpu_type(elf64_endr.e_machine));
+    greate_print_hdr_info(elf64_endr);
     return 0;
 }
