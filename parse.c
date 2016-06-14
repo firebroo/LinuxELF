@@ -138,6 +138,17 @@ typedef struct
 
 #define EI_PAD              9   /* Byte index of padding bytes */
 
+#define ET_REL              1
+#define ET_EXEC             2 
+#define ET_DYN              3
+
+#define EM_M32              1
+#define EM_SPARC            2
+#define EM_386              3
+#define EM_68k              4 
+#define EM_88k              5
+#define EM_860              6
+
 
 bool
 check_magic_hdr(unsigned char *ident)
@@ -252,7 +263,7 @@ check_osabi(unsigned char *ident)
                 printf("unknow osabi\n");
                 return false;
         }
-    printf("(%d)\n", ident[EI_OSABI]);
+    printf("\n");
     return true;
 }
 
@@ -261,14 +272,14 @@ check_elf_class(Elf64_Half type)
 {
     printf("\t%-36s", "File Type:");
     switch(type) {
-        case 1:
+        case ET_REL:
             printf("Relocatable file\n");
             break;
-        case 2:
+        case ET_EXEC:
             printf("EXEC (Executable file))\n");
             break;
-        case 3:
-            printf("dynamic link file\n");
+        case ET_DYN:
+            printf("Shared object file\n");
             break;
         default:
             printf("unkonw file type\n");
@@ -283,10 +294,10 @@ check_cpu_type (Elf64_Half type)
     printf("\t%-36s", "Machine:");
     switch(type) {
         case 3:
-            printf("intel i386\n");
+            printf("intel x86\n");
             break;
         case 0x3E:
-            printf("AMD x64\n");
+            printf("AMD x86_64\n");
             break;
         default:
             printf("unknow cpu type\n");
@@ -369,6 +380,7 @@ main(int argc, char *argv[])
     assert(check_big_or_small_edian(elf64_endr.e_ident));
     printf("\t%-36s%d(current)\n", "Data:", elf64_endr.e_ident[EI_VERSION]);
     assert(check_osabi(elf64_endr.e_ident));
+    printf("\t%-36s%d\n", "ABI Version:", elf64_endr.e_ident[EI_ABIVERSION]);
     assert(check_elf_class(elf64_endr.e_type));
     assert(check_cpu_type(elf64_endr.e_machine));
     greate_print_hdr_info(elf64_endr);
